@@ -293,7 +293,7 @@ do_mknod(const char *path, int mode, unsigned devid)
 	if(mode==S_IFCHR || mode==S_IFBLK)
 	{
 		int retDir=dir_namev(path,&namelen,&name,NULL,&nvnode);
-		if(&nvnode==NULL)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
+		if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
 			return -ENOENT;
 		
 		if(strlen(name)>NAME_LEN) 
@@ -463,7 +463,7 @@ do_chdir(const char *path)
 	size_t namelen;
 	
 	int nameret=dir_namev(path,&name,&namelen,NULL,&dirname);
-	if(&dirname==NULL)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
+	if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
 		return -ENOENT;
 		
 	if(strlen(name)>NAME_LEN) 
@@ -602,7 +602,7 @@ do_stat(const char *path, struct stat *buf)
 	size_t namelen;
 	
 	int retDir=dir_namev(path,&namelen,&name,NULL,&nvnode);
-	if(&nvnode==NULL)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
+	if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
 		return -ENOENT;		
 
 	if(strlen(name)>NAME_LEN) 
