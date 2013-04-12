@@ -280,15 +280,15 @@ do_dup2(int ofd, int nfd)
 int
 do_mknod(const char *path, int mode, unsigned devid)
 {
-      //  NOT_YET_IMPLEMENTED("VFS: do_mknod");
-	vnode_t *nvnode;//////////////////////////////////
-	vnode_t *altvnode;///////////////////////////////
+      /* NOT_YET_IMPLEMENTED("VFS: do_mknod");*/
+	vnode_t *nvnode;
+	vnode_t *altvnode;
 	
 	const char *name;
 	size_t namelen;
 	
 
-	if(S_ISCHR(mode) || S_ISBLK(m))////////////////////////////////////////////
+	if(S_ISCHR(mode) || S_ISBLK(mode))
 	{
 		
 		int retDir=dir_namev(path,&namelen,&name,NULL,&nvnode);
@@ -301,22 +301,22 @@ do_mknod(const char *path, int mode, unsigned devid)
 			return -ENAMETOOLONG;
 		}
 		
-		int lookupResult=lookup(nvnode,&name,namelen,&altvnode);
+		int lookupResult=lookup(nvnode,name,namelen,&altvnode);
 		if(lookupResult==-ENOTDIR)	
 		{
 			vput(nvnode);
-		//	vput(altvnode);		
+		/*	vput(altvnode);		*/
 			return -ENOTDIR;	
 		}
 		if(lookupResult==0)
 		{
 			vput(nvnode);
-		//	vput(altvnode);		
+		/*	vput(altvnode);		*/
 			return -EEXIST;
 		}	
 
 		int toRet=nvnode->vn_ops->mknod(nvnode,name,namelen,mode,devid);
-		//////////////////////// MKMOD(2)
+		/* MKMOD(2)	*/
 		return toRet;				
 	}
 	else
@@ -451,7 +451,7 @@ do_rename(const char *oldname, const char *newname)
 int
 do_chdir(const char *path)
 {
-       // NOT_YET_IMPLEMENTED("VFS: do_chdir");
+       /* NOT_YET_IMPLEMENTED("VFS: do_chdir");*/
 	vnode_t *dirname;
 	vnode_t *altdirname;
  	
@@ -460,7 +460,7 @@ do_chdir(const char *path)
 	const char *name;
 	size_t namelen;
 		
-	int nameret=dir_namev(path,&name,&namelen,NULL,&dirname);
+	int nameret=dir_namev(path,&namelen,&name,NULL,&dirname);
 	if(nameret==-ENOTDIR)
 		return -ENOENT;		
 	if(strlen(name)>NAME_LEN) 
@@ -478,7 +478,7 @@ do_chdir(const char *path)
 	if(lookupResult==-ENOTDIR)	
 	{
 		vput(dirname);
-		//vput(altdirname);		
+		/*vput(altdirname);		*/
 		return -ENOTDIR;	
 	}
 
@@ -506,8 +506,8 @@ do_chdir(const char *path)
 int
 do_getdent(int fd, struct dirent *dirp)
 {
-        //NOT_YET_IMPLEMENTED("VFS: do_getdent");
-	file *f;
+        /*NOT_YET_IMPLEMENTED("VFS: do_getdent");*/
+	file_t *f;
  	f=fget(fd);
 	
 	if(f && curproc->p_files[fd])
@@ -515,20 +515,20 @@ do_getdent(int fd, struct dirent *dirp)
 		if(S_ISDIR(f->f_vnode->vn_mode))
 			return -ENOTDIR;			
 		
-		int retRead=f->f_vnode->vn_ops->readdir(f->f_vnode,f->pos,dirp);	
+		int retRead=f->f_vnode->vn_ops->readdir(f->f_vnode,f->f_pos,dirp);	
 		if(retRead)
 		{
 			if(retRead==f->f_vnode->vn_len)
 				return 0;
 
-			f->f_pos=f->fpos+retRead; 		
+			f->f_pos=f->f_pos+retRead; 		
 		}
 	}
 	else
 	{
 		return -EBADF;
 	}
-	return sizeof(dirent);
+	return sizeof(dirent_t);
 }
 
 /*
@@ -544,11 +544,11 @@ do_getdent(int fd, struct dirent *dirp)
 int
 do_lseek(int fd, int offset, int whence)
 {
-        //NOT_YET_IMPLEMENTED("VFS: do_lseek");
-	file *f=NULL;
+        /*NOT_YET_IMPLEMENTED("VFS: do_lseek");*/
+	file_t *f=NULL;
 	f=curproc->p_files[fd];
 	
-	if(fd<0 || f==NULL || S_IFCHR(f->f_vnode->vn_mode) || S_IFBLK(f->f_vnode->vn_mode))	
+	if(fd<0 || f==NULL || S_ISCHR(f->f_vnode->vn_mode) || S_ISBLK(f->f_vnode->vn_mode))	
 		return -EBADF;
 	
 	if(whence!=SEEK_SET && whence!=SEEK_CUR && whence!=SEEK_END)
@@ -557,16 +557,16 @@ do_lseek(int fd, int offset, int whence)
 	switch(whence)
 	{
 		case SEEK_SET:
-				f->fpos=offset;
-				newpos=f->fpos;
+				f->f_pos=offset;
+				newpos=f->f_pos;
 				break;
 		case SEEK_END:
-				f->fpos=f->fvnode->vn_len+offset;
-				newpos=f->fpos;
+				f->f_pos=f->f_vnode->vn_len+offset;
+				newpos=f->f_pos;
 				break;
 		default:
-				f->fpos+=offset;
-				newpos=f->fpos;						
+				f->f_pos+=offset;
+				newpos=f->f_pos;						
 	}
 	
 	if(newpos<0)
@@ -589,7 +589,7 @@ do_lseek(int fd, int offset, int whence)
 int
 do_stat(const char *path, struct stat *buf)
 {
-       // NOT_YET_IMPLEMENTED("VFS: do_stat");
+       /* NOT_YET_IMPLEMENTED("VFS: do_stat");*/
 	vnode_t *nvnode;
 	vnode_t *altvnode;
 	
@@ -607,15 +607,15 @@ do_stat(const char *path, struct stat *buf)
 	}
 
 	vput(nvnode);
-	int lookupResult=lookup(nvnode,&name,namelen,&altvnode);
+	int lookupResult=lookup(nvnode,name,namelen,&altvnode);
 	if(lookupResult==-ENOTDIR)	
 	{		
-		//vput(altvnode);		
+		/*vput(altvnode);		*/
 		return -ENOTDIR;	
 	}
 	if(lookupResult==-ENOENT) 
 	{
-		//vput(altvnode);	
+		/*vput(altvnode);	*/
 		return -ENOENT;
 	}
 	if(lookupResult==0)
@@ -623,7 +623,7 @@ do_stat(const char *path, struct stat *buf)
 		vput(altvnode);			
 	}	
 	int statret=nvnode->vn_ops->stat(altvnode, buf);
-		/////////////////// HANLDE 2 ?
+		/*HANLDE 2 ?*/
 	
         return statret;
 }
