@@ -281,20 +281,19 @@ int
 do_mknod(const char *path, int mode, unsigned devid)
 {
       //  NOT_YET_IMPLEMENTED("VFS: do_mknod");
-	vnode_t *nvnode=(struct vnode *)kmalloc(sizeof(struct vnode));
-	KASSERT(!nvnode);
-	vnode_t *altvnode=(struct vnode *)kmalloc(sizeof(struct vnode));
-	KASSERT(!altvnode);
+	vnode_t *nvnode;//////////////////////////////////
+	vnode_t *altvnode;///////////////////////////////
 	
 	const char *name;
 	size_t namelen;
 	
 
-	if(mode==S_IFCHR || mode==S_IFBLK)
+	if(S_ISCHR(mode) || S_ISBLK(m))////////////////////////////////////////////
 	{
+		
 		int retDir=dir_namev(path,&namelen,&name,NULL,&nvnode);
-		if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
-			return -ENOENT;
+		if(retDir==-ENOTDIR)
+			return -ENOENT;	
 		
 		if(strlen(name)>NAME_LEN) 
 		{
@@ -318,8 +317,7 @@ do_mknod(const char *path, int mode, unsigned devid)
 
 		int toRet=nvnode->vn_ops->mknod(nvnode,name,namelen,mode,devid);
 		//////////////////////// MKMOD(2)
-		return toRet;
-				
+		return toRet;				
 	}
 	else
 	{
@@ -461,11 +459,10 @@ do_chdir(const char *path)
 	
 	const char *name;
 	size_t namelen;
-	
-	int nameret=dir_namev(path,&name,&namelen,NULL,&dirname);
-	if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
-		return -ENOENT;
 		
+	int nameret=dir_namev(path,&name,&namelen,NULL,&dirname);
+	if(nameret==-ENOTDIR)
+		return -ENOENT;		
 	if(strlen(name)>NAME_LEN) 
 	{
 		vput(dirname);
@@ -487,7 +484,7 @@ do_chdir(const char *path)
 
 	curproc->p_cwd=altdirname;
 	vput(olddir);
-	vput(dirname);///////////////// NOT SURE //////////////
+	vput(dirname);
         return 0;
 }
 
@@ -515,7 +512,7 @@ do_getdent(int fd, struct dirent *dirp)
 	
 	if(f && curproc->p_files[fd])
 	{	
-		if(f->f_vnode->vn_mode!=S_ISDIR)
+		if(S_ISDIR(f->f_vnode->vn_mode))
 			return -ENOTDIR;			
 		
 		int retRead=f->f_vnode->vn_ops->readdir(f->f_vnode,f->pos,dirp);	
@@ -551,7 +548,7 @@ do_lseek(int fd, int offset, int whence)
 	file *f=NULL;
 	f=curproc->p_files[fd];
 	
-	if(fd<0 || f==NULL || f->f_vnode->vn_mode==S_IFCHR || f->f_vnode->vn_mode==S_IFBLK)	
+	if(fd<0 || f==NULL || S_IFCHR(f->f_vnode->vn_mode) || S_IFBLK(f->f_vnode->vn_mode))	
 		return -EBADF;
 	
 	if(whence!=SEEK_SET && whence!=SEEK_CUR && whence!=SEEK_END)
@@ -564,7 +561,7 @@ do_lseek(int fd, int offset, int whence)
 				newpos=f->fpos;
 				break;
 		case SEEK_END:
-				f->fpos=f->fvnode->vn_len;
+				f->fpos=f->fvnode->vn_len+offset;
 				newpos=f->fpos;
 				break;
 		default:
@@ -593,28 +590,26 @@ int
 do_stat(const char *path, struct stat *buf)
 {
        // NOT_YET_IMPLEMENTED("VFS: do_stat");
-	vnode_t *nvnode=(struct vnode *)kmalloc(sizeof(struct vnode));
-	KASSERT(!nvnode);
-	vnode_t *altvnode=(struct vnode *)kmalloc(sizeof(struct vnode));
-	KASSERT(!altvnode);
+	vnode_t *nvnode;
+	vnode_t *altvnode;
 	
 	const char *name;
 	size_t namelen;
 	
 	int retDir=dir_namev(path,&namelen,&name,NULL,&nvnode);
-	if(retDir==-ENOENT)////////////////////////CHECK THIS>>> DIRECTORY COMPONENT
-		return -ENOENT;		
+	if(retDir==-ENOTDIR)
+		return -ENOENT;
 
 	if(strlen(name)>NAME_LEN) 
 	{
 		vput(nvnode);
 		return -ENAMETOOLONG;
 	}
-	
+
+	vput(nvnode);
 	int lookupResult=lookup(nvnode,&name,namelen,&altvnode);
 	if(lookupResult==-ENOTDIR)	
-	{
-		vput(nvnode);
+	{		
 		//vput(altvnode);		
 		return -ENOTDIR;	
 	}
