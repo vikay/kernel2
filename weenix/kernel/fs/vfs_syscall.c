@@ -315,6 +315,7 @@ do_mknod(const char *path, int mode, unsigned devid)
 			return -EEXIST;
 		}	
 
+		KASSERT(NULL!=nvnode->vn_ops->mknod);
 		int toRet=nvnode->vn_ops->mknod(nvnode,name,namelen,mode,devid);
 		/* MKMOD(2)	*/
 		return toRet;				
@@ -622,6 +623,8 @@ do_stat(const char *path, struct stat *buf)
 	{
 		vput(altvnode);			
 	}	
+
+	KASSERT(nvnode->vn_ops->stat);
 	int statret=nvnode->vn_ops->stat(altvnode, buf);
 		/*HANLDE 2 ?*/
 	
